@@ -4,12 +4,7 @@ from bottle import run,get,post,request,delete
 '''
 ################################################
 Hello there,
-This is my code for the Amdocs interview task.
-Hope you'll enjoy it,
-Gilad Kameri.
 
-www.GiladK.com
-GiladKameri@gmail.com
 #################################################
 '''
 
