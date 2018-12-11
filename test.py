@@ -5,12 +5,7 @@ import logging
 '''
 ################################################
 Hello there,
-This is my test file (using Pytest) for the Amdocs interview task.
-Hope you'll enjoy it,
-Gilad Kameri.
 
-www.GiladK.com
-GiladKameri@gmail.com
 #################################################
 '''
 
