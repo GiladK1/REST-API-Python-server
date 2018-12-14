@@ -1,65 +1,79 @@
-from flask import Flask, request
-from flask_restful import Resource, Api
-import logging
+import pytest
+import requests
 import json
-app=Flask(__name__)
-api=Api(app)
+import logging
+'''
+################################################
+This is the test file
+#################################################
+'''
 
-'''
-##############
-This is my REST-API server upgrade using FLASK & JSON
-Gilad 
-##############
-'''
-#Create and configure logger.
-logging.basicConfig(filename="ActivityLog.Log",
+#Create and configure the test logger.
+logging.basicConfig(filename="TestingLog.Log",
     level = logging.DEBUG,
     format='%(levelname)s--%(asctime)s -- %(message)s',
     filemode='w')
 logger = logging.getLogger()
-logger.info("#server is up - Using FLASK")
-
-#Load from the  JSON D.B to a nested Dictionary (the file is in the same folder)
-with open('animals.json') as f:
-    animalsJSON=json.load(f)
-
-## OOP ##
-class Animals(Resource):
-    #This function fetch the all animals (GET request)
-    def get(self):
-        logger.info("#GET req. url -- http://127.0.0.1:5000/animals -- fetching the all animals %s",
-                    animalsJSON)
-        return animalsJSON
-    #This function is adding a new animal (POST request)
-    def post(self):
-        newJASON = request.get_json() #Get the JASON
-        animalsJSON.update(newJASON) # insert the new data
-        logger.info("#POST req. url -- http://127.0.0.1:5000/animals -- Insert a new animal : %s",
-                    animalsJSON)
-        updateDB() # Updating the DB - JASON file after insertion
-        logger.info("#DB - JSON file is updated",
-                    animalsJSON)
-        return animalsJSON
-
-#OOP#
-class Animal(Resource):
-    #This function fetch spacific animal by type (GET request)
-    def get(self,name):
-        logger.info("#GET req. url -- http://127.0.0.1:5000//animal/%s' -- Get all the animals from the chosen"
-                    "type :%s ---%s",
-                    name, animalsJSON[name])
-        return animalsJSON[name]
-
-#This function is used to updated our DB - JASON file
-def updateDB():
-    with open('animals.json', 'w') as outfile:
-        json.dump(animalsJSON, outfile)
-        logger.info("#Updating the DB JASON file------ : %s",
-                animalsJSON)
-
-api.add_resource(Animals,'/animals')
-api.add_resource(Animal,'/animal/<string:name>')
+logger.info("#Our server is up")
 
 
-if __name__ =='__main__':
-    app.run(debug=True)
+#This test is sending a post request to the server(insert data) and receive an update that the
+# request worked correctly.
+def insertDataTest(type,id,name):
+    url = 'http://127.0.0.1:5000/animals'
+    payload = {type: {id:name}}
+#Insert data as JSON
+    headers = {'content-type': 'application/json'}
+    response = requests.post(url, data=json.dumps(payload), headers=headers)
+    if (response.status_code == 200):
+        print("(POST)http://127.0.0.1:5000/animals "
+              " --Information entered successfully, Test successful(code:200)"
+              "type: %s name: %s id: %s "% (type, name ,id))
+        logger.info("(POST) http://127.0.0.1:5000/animals "
+              "--Information entered successfully, Test successful(code:200)%s %s %s "%(type, name ,id))
+    else:
+        print("(POST) http://127.0.0.1:5000/animals-- An error occurred - Test failed |"+"Error code: %d."
+                     % response.status_code)
+        logger.error("(POST) http://127.0.0.1:5000/animals-- An error occurred - Test failed |"+"Error code: %d."
+                     % response.status_code)
+    #OR
+    # assert(response.status_code) == 200 # OK
+
+
+#This test will fetch the entire data
+def fetchAll():
+    r = requests.get("http://127.0.0.1:5000/animals")
+    if (r.status_code == 200):
+        print("(GET) http://127.0.0.1:5000/animals-- Information fetch successfully, "
+                    "Test successful( code:200)")
+        logger.info("(GET) http://127.0.0.1:5000/animals-- Information fetch successfully, "
+                    "Test successful( code:200)")
+    else:
+        print("An error occurred - Test failed |" + "Error code: %d. " % r.status_code)
+        logger.error("An error occurred - Test failed |" + "Error code: %d. " % r.status_code)
+    #OR
+    #assert (r.status_code) == 200 #OK
+
+#This test will fetch a specific type
+def fetchOne(name):
+    r = requests.get("http://127.0.0.1:5000/animal/"+name)
+    if (r.status_code == 200):
+        print(" (GET) http://127.0.0.1:5000/animal/ --Information fetch successfully for one animal,"
+              " Test successful(code:200) animal name: %s" %name)
+        logger.info("(GET) http://127.0.0.1:5000/animal/Information fetch successfully for one animal,"
+                    " Test successful(code:200) animal name: %s" % name)
+    else:
+        print("(GET) http://127.0.0.1:5000/animal/ An error occurred - Test failed  |"
+              " " + "Error code: %d. " % r.status_code +"name: %s" %name)
+        logger.error("(GET) http://127.0.0.1:5000/animal/ An error occurred - Test failed  |"
+              " " + "Error code: %d. " % r.status_code +"name: %s" %name)
+    #OR
+    #assert (r.status_code) == 200 #OK
+
+
+
+insertDataTest("dog","10","rafi")
+fetchAll()
+fetchOne("dog3")
+fetchOne("noSuchAnimal") # Negative test with will respond back that an item haven’t been found  .
+
