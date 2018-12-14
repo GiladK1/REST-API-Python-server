@@ -1,73 +1,65 @@
+from flask import Flask, request
+from flask_restful import Resource, Api
 import logging
-from bottle import run,get,post,request,delete
+import json
+app=Flask(__name__)
+api=Api(app)
 
 '''
-################################################
-Hello there,
-
-#################################################
+##############
+This is my REST-API server upgrade using FLASK & JSON
+Gilad 
+##############
 '''
-
-
 #Create and configure logger.
-logging.basicConfig(filename="D:\\ActivityLog.Log",
+logging.basicConfig(filename="ActivityLog.Log",
     level = logging.DEBUG,
     format='%(levelname)s--%(asctime)s -- %(message)s',
     filemode='w')
 logger = logging.getLogger()
-logger.info("#Our server is up")
+logger.info("#server is up - Using FLASK")
 
-#This is my selected data structure - a Dictionary.
-animals = [{'name':'snake','number':'1'},{'name':'dog','number':"2"}]
-logger.debug("#Dictionary data type was created")
+#Load from the  JSON D.B to a nested Dictionary (the file is in the same folder)
+with open('animals.json') as f:
+    animalsJSON=json.load(f)
 
-#Define a Get request   - fetch the entire data .
-@get('/animals')
-def get():
-    logger.debug("# Return the animels dictionary as JSON (get)")
-    try:
-        return {'animals':animals}
-    except:
-        logger.error("#An error occurred while retrun the data type !(get) ")
+## OOP ##
+class Animals(Resource):
+    #This function fetch the all animals (GET request)
+    def get(self):
+        logger.info("#GET req. url -- http://127.0.0.1:5000/animals -- fetching the all animals %s",
+                    animalsJSON)
+        return animalsJSON
+    #This function is adding a new animal (POST request)
+    def post(self):
+        newJASON = request.get_json() #Get the JASON
+        animalsJSON.update(newJASON) # insert the new data
+        logger.info("#POST req. url -- http://127.0.0.1:5000/animals -- Insert a new animal : %s",
+                    animalsJSON)
+        updateDB() # Updating the DB - JASON file after insertion
+        logger.info("#DB - JSON file is updated",
+                    animalsJSON)
+        return animalsJSON
 
-#Define a Post request - fetch a specific name .
-@post('/animal/<name>')
-def getOne(name):
-    logger.info("#Looking for the specific animal")
-    the_animal = [animal for animal in animals if animal['name'] == name]
-    try:
-        return {'animal' : the_animal[0]}
-    except:
-        looger.error("# Error while looking for the specific animal !")
-        
+#OOP#
+class Animal(Resource):
+    #This function fetch spacific animal by type (GET request)
+    def get(self,name):
+        logger.info("#GET req. url -- http://127.0.0.1:5000//animal/%s' -- Get all the animals from the chosen"
+                    "type :%s ---%s",
+                    name, animalsJSON[name])
+        return animalsJSON[name]
 
-#Define a Post request - add new animal.
-@post('/animal')
-def addOne():
-    logger.debug("#Creates a new animal")
-    new_animal ={ 'name':request.json.get('name'),'number':request.json.get('number')}
-    logger.debug("# appending the new animal to the data type (post)")
-    animals.append(new_animal)
-    try:
-        return {'animals':animals}
-    except:
-        logger.error("#An error occurred while appending the new animal ! (post)" )
+#This function is used to updated our DB - JASON file
+def updateDB():
+    with open('animals.json', 'w') as outfile:
+        json.dump(animalsJSON, outfile)
+        logger.info("#Updating the DB JASON file------ : %s",
+                animalsJSON)
 
-#Define a Delete request - delete an animal.
-@delete('/animal/<name>')
-def removeOne(name):
-    logger.info("#Looking for the animal")
-    the_animal = [animal for animal in animals if animal['name'] == name]
-    try:
-        animals.remove(the_animal[0])
-    except:
-        logger.error("#An error occurred while remove the animal !")
-    logger.debug("#animal successfully removed")
-    try:
-        return {'animals':animals}
-    except:
-         logger.error("#An error occurred while return the new animal data type after removing ! " )
+api.add_resource(Animals,'/animals')
+api.add_resource(Animal,'/animal/<string:name>')
 
 
-
-run(reloader=True, debug=True)
+if __name__ =='__main__':
+    app.run(debug=True)
